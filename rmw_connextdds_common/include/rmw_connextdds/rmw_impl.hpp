@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
@@ -273,6 +274,7 @@ public:
     const rmw_qos_profile_t * const qos_policies,
     const rmw_subscription_options_t * const subscriber_options,
     const bool internal = false,
+    const rmw_node_t * const node = nullptr,
     const RMW_Connext_MessageType msg_type = RMW_CONNEXT_MESSAGE_USERDATA,
     const void * const intro_members = nullptr,
     const bool intro_members_cpp = false,
@@ -281,7 +283,7 @@ public:
     const char * const cft_filter = nullptr);
 
   rmw_ret_t
-  finalize();
+  finalize(const bool reset_cft = false);
 
   DDS_DataReader *
   reader() const
@@ -353,7 +355,7 @@ public:
   RMW_Connext_SubscriberStatusCondition *
   condition()
   {
-    return &this->status_condition;
+    return this->status_condition.get();
   }
 
   const rmw_gid_t * gid() const
@@ -396,7 +398,7 @@ public:
     }
 
     if (this->internal) {
-      return this->status_condition.trigger_loan_guard_condition(this->loan_len > 0);
+      return this->status_condition->trigger_loan_guard_condition(this->loan_len > 0);
     }
 
     return RMW_RET_OK;
@@ -437,6 +439,18 @@ public:
     rmw_message_info_t * const message_info,
     bool * const taken);
 
+  rmw_ret_t
+  set_cft_expression_parameters(
+    const char * const filter_expression,
+    const rcutils_string_array_t * const expression_parameters
+  );
+
+  rmw_ret_t
+  get_cft_expression_parameters(
+    char ** const filter_expression,
+    rcutils_string_array_t * const expression_parameters
+  );
+
   bool
   has_data()
   {
@@ -467,6 +481,17 @@ public:
     return this->dds_topic;
   }
 
+  static std::string get_atomic_id()
+  {
+    static std::atomic_uint64_t id;
+    return std::to_string(id++);
+  }
+
+  bool is_cft_supported()
+  {
+    return nullptr != dds_topic_cft;
+  }
+
   const bool internal;
   const bool ignore_local;
 
@@ -478,12 +503,16 @@ private:
   RMW_Connext_MessageTypeSupport * type_support;
   rmw_gid_t ros_gid;
   const bool created_topic;
-  RMW_Connext_SubscriberStatusCondition status_condition;
+  std::shared_ptr<RMW_Connext_SubscriberStatusCondition> status_condition;
   RMW_Connext_UntypedSampleSeq loan_data;
   DDS_SampleInfoSeq loan_info;
   size_t loan_len;
   size_t loan_next;
   std::mutex loan_mutex;
+  std::mutex cft_mutex;
+  const rmw_node_t * const node;
+  rmw_qos_profile_t qos_policies;
+  rmw_subscription_options_t subscriber_options;
 
   RMW_Connext_Subscriber(
     rmw_context_impl_t * const ctx,
@@ -493,7 +522,23 @@ private:
     const bool ignore_local,
     const bool created_topic,
     DDS_TopicDescription * const dds_topic_cft,
-    const bool internal);
+    const bool internal,
+    const rmw_node_t * const node,
+    const rmw_qos_profile_t * const qos_policies,
+    const rmw_subscription_options_t * const subscriber_options);
+
+  static
+  DDS_DataReader *
+  initialize_datareader(
+    rmw_context_impl_t * const ctx,
+    DDS_DomainParticipant * const dp,
+    DDS_Subscriber * const sub,
+    const std::string & fqtopic_name,
+    const rmw_qos_profile_t * const qos_policies,
+    RMW_Connext_MessageTypeSupport * const type_support,
+    const rmw_subscription_options_t * const subscriber_options,
+    const bool internal,
+    DDS_TopicDescription * const sub_topic);
 
   friend class RMW_Connext_SubscriberStatusCondition;
 };

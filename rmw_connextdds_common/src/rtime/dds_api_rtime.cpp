@@ -867,6 +867,7 @@ rmw_connextdds_create_contentfilteredtopic(
   DDS_Topic * const base_topic,
   const char * const cft_name,
   const char * const cft_filter,
+  const rcutils_string_array_t * const cft_expression_parameters,
   DDS_TopicDescription ** const cft_out)
 {
   UNUSED_ARG(ctx);
@@ -874,6 +875,7 @@ rmw_connextdds_create_contentfilteredtopic(
   UNUSED_ARG(base_topic);
   UNUSED_ARG(cft_name);
   UNUSED_ARG(cft_filter);
+  UNUSED_ARG(cft_expression_parameters);
   UNUSED_ARG(cft_out);
   return RMW_RET_UNSUPPORTED;
 }
@@ -1951,4 +1953,28 @@ rmw_connextdds_enable_security(
     RMW_CONNEXTDDS_ID)
   return RMW_RET_ERROR;
 #endif /* RMW_CONNEXT_ENABLE_SECURITY */
+}
+
+rmw_ret_t
+rmw_connextdds_set_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  const char * const filter_expression,
+  const rcutils_string_array_t * const expression_parameters)
+{
+  UNUSED_ARG(topic_desc);
+  UNUSED_ARG(filter_expression);
+  UNUSED_ARG(expression_parameters);
+  return RMW_RET_UNSUPPORTED;
+}
+
+rmw_ret_t
+rmw_connextdds_get_cft_filter_expression(
+  DDS_TopicDescription * const topic_desc,
+  char ** const expr_out,
+  rcutils_string_array_t * const cft_params_out);
+{
+  UNUSED_ARG(topic_desc);
+  UNUSED_ARG(expr_out);
+  UNUSED_ARG(cft_params_out);
+  return RMW_RET_UNSUPPORTED;
 }
