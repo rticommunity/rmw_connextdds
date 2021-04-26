@@ -922,6 +922,25 @@ rmw_api_connextdds_init(
   ctx->optimize_large_data = '\0' == disable_optimize_large_data_env[0];
 #endif /* RMW_CONNEXT_DEFAULT_LARGE_DATA_OPTIMIZATIONS */
 
+#if RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS
+  // Check if we should disable the optimizations for the RTPS reliability protocol
+  const char * disable_optimize_reliability_env = nullptr;
+  lookup_rc = rcutils_get_env(
+    RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS,
+    &disable_optimize_reliability_env);
+
+  if (nullptr != lookup_rc || nullptr == disable_optimize_reliability_env) {
+    RMW_CONNEXT_LOG_ERROR_A_SET(
+      "failed to lookup from environment: "
+      "var=%s, "
+      "rc=%s ",
+      RMW_CONNEXT_ENV_DISABLE_RELIABILITY_OPTIMIZATIONS,
+      lookup_rc)
+    return RMW_RET_ERROR;
+  }
+  ctx->optimize_reliability = '\0' == disable_optimize_reliability_env[0];
+#endif /* RMW_CONNEXT_DEFAULT_RELIABILITY_OPTIMIZATIONS */
+
   if (nullptr == RMW_Connext_gv_DomainParticipantFactory) {
     RMW_CONNEXT_LOG_DEBUG("initializing DDS DomainParticipantFactory")
 
